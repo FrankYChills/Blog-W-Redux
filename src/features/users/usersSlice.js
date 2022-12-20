@@ -1,5 +1,7 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { Axios } from "axios";
 
+const USERS_URL = "https://jsonplaceholder.typicode.com/posts";
 const initialState = [
   { id: "0", name: "frankyWO" },
   { id: "1", name: "karanWO" },

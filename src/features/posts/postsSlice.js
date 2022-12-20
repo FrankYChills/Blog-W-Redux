@@ -1,36 +1,50 @@
-import { createSlice, nanoid } from "@reduxjs/toolkit";
+import { createSlice, nanoid, createAsyncThunk } from "@reduxjs/toolkit";
 import { sub } from "date-fns";
+import axios from "axios";
 
-const initialState = [
-  {
-    id: "1",
-    title: "Learning redux toolkit",
-    content:
-      "Redux is an open-source JavaScript library for managing and centralizing application state. It is most commonly used with libraries such as React or Angular for building user interfaces",
-    date: sub(new Date(), { minutes: 10 }).toISOString(),
-    reactions: {
-      thumbsUp: 0,
-      wow: 0,
-      heart: 0,
-      rocket: 0,
-      coffee: 0,
-    },
-  },
-  {
-    id: "2",
-    title: "React Redux",
-    content:
-      "React Redux is the official React binding for Redux. It allows React components to read data from a Redux Store, and dispatch Actions to the Store to update data. ",
-    date: sub(new Date(), { minutes: 5 }).toISOString(),
-    reactions: {
-      thumbsUp: 0,
-      wow: 0,
-      heart: 0,
-      rocket: 0,
-      coffee: 0,
-    },
-  },
-];
+const POSTS_URL = "https://jsonplaceholder.typicode.com/posts";
+
+const initialState = {
+  posts: [],
+  status: "idle", //idle | loading | succedded | failed
+  error: null,
+};
+
+export const fetchPosts = createAsyncThunk("posts/fetchPosts", async () => {
+  const response = await axios.get(POSTS_URL);
+
+  return response.data;
+});
+//lesson2-state -
+//   {
+//     id: "1",
+//     title: "Learning redux toolkit",
+//     content:
+//       "Redux is an open-source JavaScript library for managing and centralizing application state. It is most commonly used with libraries such as React or Angular for building user interfaces",
+//     date: sub(new Date(), { minutes: 10 }).toISOString(),
+//     reactions: {
+//       thumbsUp: 0,
+//       wow: 0,
+//       heart: 0,
+//       rocket: 0,
+//       coffee: 0,
+//     },
+//   },
+//   {
+//     id: "2",
+//     title: "React Redux",
+//     content:
+//       "React Redux is the official React binding for Redux. It allows React components to read data from a Redux Store, and dispatch Actions to the Store to update data. ",
+//     date: sub(new Date(), { minutes: 5 }).toISOString(),
+//     reactions: {
+//       thumbsUp: 0,
+//       wow: 0,
+//       heart: 0,
+//       rocket: 0,
+//       coffee: 0,
+//     },
+//   },
+// ];
 
 const postsSlice = createSlice({
   // all the data below can be accessed through postSlice.reducer
@@ -39,7 +53,7 @@ const postsSlice = createSlice({
   reducers: {
     postAdded: {
       reducer(state, action) {
-        state.push(action.payload);
+        state.posts.push(action.payload);
       }, //prepare do validation before updating the state using reducer function and returns data as payload to reducer
       prepare(title, content, userId) {
         return {
@@ -62,18 +76,51 @@ const postsSlice = createSlice({
     },
     reactionAdded(state, action) {
       const { postId, reaction } = action.payload;
-      const existingPost = state.find((post) => post.id === postId);
+      const existingPost = state.posts.find((post) => post.id === postId);
       if (existingPost) {
         existingPost.reactions[reaction] += 1;
       }
     },
+  },
+  extraReducers(builder) {
+    //define what happens to state after thunk function gets executed
+    builder
+      .addCase(fetchPosts.pending, (state, action) => {
+        state.status = "loading";
+      })
+      .addCase(fetchPosts.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        // when the data is fetched successfully
+        let min = 1;
+        //action.payload is the data we get from fetchPosts function
+        const loadedPost = action.payload.map((post) => {
+          // add more keys to the data
+          post.date = sub(new Date(), { minutes: min + 1 }).toISOString();
+          post.reactions = {
+            thumbsUp: 0,
+            wow: 0,
+            heart: 0,
+            rocket: 0,
+            coffee: 0,
+          };
+          return post;
+        });
+        // update the state
+        state.posts = state.posts.concat(loadedPost);
+      })
+      .addCase(fetchPosts.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.error.message;
+      });
   },
 });
 
 // export a function that gets data from reducer
 // this function can be implemented in postsListComponent to get posts but we are doing it here caue if any time any change happen on the data we can implement that on this file instead of each and every component.
 // goes to store and gets posts state
-export const selectAllPosts = (state) => state.posts;
+export const selectAllPosts = (state) => state.posts.posts;
+export const getPostsStatus = (state) => state.posts.status;
+export const getPostsError = (state) => state.posts.error;
 
 // return current state
 export default postsSlice.reducer;
