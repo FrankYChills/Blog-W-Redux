@@ -9,12 +9,19 @@ import PostsExcerpt from "./PostsExcerpt";
 import { useEffect } from "react";
 
 const PostsLists = () => {
-  const dispatch = useDispatch();
   // select a reducer to get posts
   const posts = useSelector(selectAllPosts);
   const postsStatus = useSelector(getPostsStatus);
   const error = useSelector(getPostsError);
   //reverse posts ordering(latest first)
+
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (postsStatus === "idle") {
+      dispatch(fetchPosts());
+    }
+  }, [dispatch, postsStatus]);
 
   let content = "";
   if (postsStatus === "loading") {

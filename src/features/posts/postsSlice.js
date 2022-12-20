@@ -10,11 +10,21 @@ const initialState = {
   error: null,
 };
 
+//async thunk for getting posts
 export const fetchPosts = createAsyncThunk("posts/fetchPosts", async () => {
   const response = await axios.get(POSTS_URL);
 
   return response.data;
 });
+//async thunk for posting a post
+export const addNewPost = createAsyncThunk(
+  "posts/addNewPost",
+  async (initialPost) => {
+    const response = await axios.post(POSTS_URL, initialPost);
+    return response.data;
+  }
+);
+
 //lesson2-state -
 //   {
 //     id: "1",
@@ -92,7 +102,7 @@ const postsSlice = createSlice({
         state.status = "succeeded";
         // when the data is fetched successfully
         let min = 1;
-        //action.payload is the data we get from fetchPosts function
+        //action.payload is the data we get from fetchPosts function | array of objects here
         const loadedPost = action.payload.map((post) => {
           // add more keys to the data
           post.date = sub(new Date(), { minutes: min + 1 }).toISOString();
@@ -111,6 +121,26 @@ const postsSlice = createSlice({
       .addCase(fetchPosts.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.error.message;
+      })
+      .addCase(addNewPost.fulfilled, (state, action) => {
+        // after post is posted to api do following for updating state -
+        const sortedPosts = state.posts.sort((a, b) => {
+          if (a.id > b.id) return 1;
+          if (a.id < b.id) return -1;
+          return 0;
+        });
+        //action.payload is the data to be send with addNewPost function | single object here
+        action.payload.id = sortedPosts[sortedPosts.length - 1].id + 1;
+        action.payload.userId = Number(action.payload.userId);
+        action.payload.date = new Date().toISOString();
+        action.payload.reactions = {
+          thumbsUp: 0,
+          wow: 0,
+          heart: 0,
+          rocket: 0,
+          coffee: 0,
+        };
+        state.posts.push(action.payload);
       });
   },
 });

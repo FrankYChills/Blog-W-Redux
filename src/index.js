@@ -7,12 +7,17 @@ import App from "./App";
 import { store } from "./app/store";
 import { Provider } from "react-redux";
 
+//get users immediately as app loads
+import { fetchUsers } from "./features/users/usersSlice";
+// store can dispatch any function related to state of reducers(whose slice is defined in store)
+store.dispatch(fetchUsers());
+
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
-  <React.StrictMode>
+  <>
     {/* make available store to all components via provider */}
     <Provider store={store}>
       <App />
     </Provider>
-  </React.StrictMode>
+  </>
 );

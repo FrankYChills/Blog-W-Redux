@@ -1,17 +1,22 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import { postAdded } from "./postsSlice";
+import { addNewPost } from "./postsSlice";
 import { selectAllUsers } from "../users/usersSlice";
 
 const AddForm = () => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [userId, setUserId] = useState("");
+  const [addReqStatus, setAddReqStatus] = useState("idle");
 
   const dispatch = useDispatch();
 
-  const canSave = Boolean(title) && Boolean(content) && Boolean(userId);
+  const canSave =
+    Boolean(title) &&
+    Boolean(content) &&
+    Boolean(userId) &&
+    addReqStatus === "idle";
   const users = useSelector(selectAllUsers);
 
   const usersOptions = users.map((user) => (
@@ -20,11 +25,20 @@ const AddForm = () => {
     </option>
   ));
   const onSave = () => {
-    if (title && content) {
-      dispatch(postAdded(title, content, userId));
-      setTitle("");
-      setContent("");
-      setUserId("");
+    if (canSave) {
+      // dispatch(postAdded(title, content, userId));
+      try {
+        setAddReqStatus("pending");
+        //post to the api
+        dispatch(addNewPost({ title, body: content, userId })).unwrap();
+        setTitle("");
+        setContent("");
+        setUserId("");
+      } catch (e) {
+        console.error("Failed to save the post", e);
+      } finally {
+        setAddReqStatus("idle");
+      }
     }
   };
 
