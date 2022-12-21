@@ -25,6 +25,21 @@ export const addNewPost = createAsyncThunk(
   }
 );
 
+//async thunk for updating a post
+export const updatePost = createAsyncThunk(
+  "posts/updatePost",
+  async (initialPost) => {
+    // get id from the object that is being sent to be update post
+    const { id } = initialPost;
+    try {
+      const response = await axios.put(`${POSTS_URL}/${id}`, initialPost);
+      return response.data;
+    } catch (err) {
+      console.log(err.message);
+    }
+  }
+);
+
 //lesson2-state -
 //   {
 //     id: "1",
@@ -93,7 +108,8 @@ const postsSlice = createSlice({
     },
   },
   extraReducers(builder) {
-    //define what happens to state after thunk function gets executed
+    //define what happens to state after thunk function gets executed |
+    // add the response data(action.payload here) after various requests to the local state
     builder
       .addCase(fetchPosts.pending, (state, action) => {
         state.status = "loading";
@@ -129,7 +145,8 @@ const postsSlice = createSlice({
           if (a.id < b.id) return -1;
           return 0;
         });
-        //action.payload is the data to be send with addNewPost function | single object here
+        //action.payload is the data returned after addNewPost thunk gets executed |
+        // add new keys to payload
         action.payload.id = sortedPosts[sortedPosts.length - 1].id + 1;
         action.payload.userId = Number(action.payload.userId);
         action.payload.date = new Date().toISOString();
@@ -141,12 +158,25 @@ const postsSlice = createSlice({
           coffee: 0,
         };
         state.posts.push(action.payload);
+      })
+      .addCase(updatePost.fulfilled, (state, action) => {
+        if (!action.payload?.id) {
+          console.log("Update couldn't be completed");
+          // action.payload would be error here
+          console.log(action.payload);
+          return;
+        }
+        const { id } = action.payload;
+        action.payload.date = new Date().toISOString();
+        // update local state - remove the old post with that id and add updated post(action.payload)
+        const posts = state.posts.filter((post) => post.id !== id);
+        state.posts = [...posts, action.payload];
       });
   },
 });
 
 // export a function that gets data from reducer
-// this function can be implemented in postsListComponent to get posts but we are doing it here caue if any time any change happen on the data we can implement that on this file instead of each and every component.
+// this function can be implemented in postsListComponent to get posts but we are doing it here cause if any time any change happen on the data we can implement that on this file instead of each and every component.
 // goes to store and gets posts state
 export const selectAllPosts = (state) => state.posts.posts;
 export const getPostsStatus = (state) => state.posts.status;
