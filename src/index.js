@@ -7,6 +7,9 @@ import App from "./App";
 import { store } from "./app/store";
 import { Provider } from "react-redux";
 
+//
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
 //get users immediately as app loads
 import { fetchUsers } from "./features/users/usersSlice";
 // store can dispatch any function related to state of reducers(whose slice is defined in store)
@@ -17,7 +20,11 @@ root.render(
   <>
     {/* make available store to all components via provider */}
     <Provider store={store}>
-      <App />
+      <Router>
+        <Routes>
+          <Route path="/*" element={<App />} />
+        </Routes>
+      </Router>
     </Provider>
   </>
 );

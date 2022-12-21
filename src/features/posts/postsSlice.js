@@ -152,6 +152,10 @@ export const selectAllPosts = (state) => state.posts.posts;
 export const getPostsStatus = (state) => state.posts.status;
 export const getPostsError = (state) => state.posts.error;
 
+//get a single post from state
+export const selectPostById = (state, postId) =>
+  state.posts.posts.find((post) => post.id === postId);
+
 // return current state
 export default postsSlice.reducer;
 
