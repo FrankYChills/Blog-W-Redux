@@ -10,10 +10,12 @@ import { Provider } from "react-redux";
 //
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-//get users immediately as app loads
+//get users and posts immediately as app loads to fill the state
 import { fetchUsers } from "./features/users/usersSlice";
+import { fetchPosts } from "./features/posts/postsSlice";
 // store can dispatch any function related to state of reducers(whose slice is defined in store)
 store.dispatch(fetchUsers());
+store.dispatch(fetchPosts());
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(

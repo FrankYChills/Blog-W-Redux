@@ -35,7 +35,29 @@ export const updatePost = createAsyncThunk(
       const response = await axios.put(`${POSTS_URL}/${id}`, initialPost);
       return response.data;
     } catch (err) {
-      console.log(err.message);
+      // gets triggered when we try to update a post thats not in API aka that we created manually
+      // console.log(err.message);
+      //after having error we can send the data back (aka initialPost) as if update was successful to the api to successfully update the local state
+      // IMP - ONLY FOR LOCAL TESTING
+      return initialPost;
+    }
+  }
+);
+
+// async thunk for deleting a post
+export const deletePost = createAsyncThunk(
+  "posts/deletePost",
+  async (initialPost) => {
+    const { id } = initialPost;
+    try {
+      const response = await axios.delete(`${POSTS_URL}/${id}`);
+      if (response?.status === 200) {
+        // manually return id back cause jsonplaceholder doesn't
+        return initialPost;
+      }
+      return `${response?.status} : ${response?.statusText}`;
+    } catch (err) {
+      return err.message;
     }
   }
 );
@@ -171,6 +193,21 @@ const postsSlice = createSlice({
         // update local state - remove the old post with that id and add updated post(action.payload)
         const posts = state.posts.filter((post) => post.id !== id);
         state.posts = [...posts, action.payload];
+      })
+      .addCase(deletePost.fulfilled, (state, action) => {
+        // if we don't get a id back
+        if (!action.payload?.id) {
+          console.log("Delete post failed");
+
+          console.log(action.payload);
+          return;
+        }
+        const { id } = action.payload;
+
+        const posts = state.posts.filter((post) => post.id !== Number(id));
+        console.log(posts.length);
+        // update local state with posts without deleted posts
+        state.posts = posts;
       });
   },
 });

@@ -1,12 +1,6 @@
-import { useSelector, useDispatch } from "react-redux";
-import {
-  selectAllPosts,
-  getPostsStatus,
-  getPostsError,
-  fetchPosts,
-} from "./postsSlice";
+import { useSelector } from "react-redux";
+import { selectAllPosts, getPostsStatus, getPostsError } from "./postsSlice";
 import PostsExcerpt from "./PostsExcerpt";
-import { useEffect } from "react";
 
 const PostsLists = () => {
   // select a reducer to get posts
@@ -15,13 +9,11 @@ const PostsLists = () => {
   const error = useSelector(getPostsError);
   //reverse posts ordering(latest first)
 
-  const dispatch = useDispatch();
-
-  useEffect(() => {
-    if (postsStatus === "idle") {
-      dispatch(fetchPosts());
-    }
-  }, [dispatch, postsStatus]);
+  // useEffect(() => {
+  //   if (postsStatus === "idle") {
+  //     dispatch(fetchPosts());
+  //   }
+  // }, [dispatch, postsStatus]);
 
   let content = "";
   if (postsStatus === "loading") {

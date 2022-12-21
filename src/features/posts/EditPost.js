@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
 
 import { selectAllUsers } from "../users/usersSlice";
-import { selectPostById, updatePost } from "./postsSlice";
+import { selectPostById, updatePost, deletePost } from "./postsSlice";
 
 const EditPost = () => {
   // grab postId (/post/edit/:postId) from url
@@ -68,20 +68,20 @@ const EditPost = () => {
     }
   };
 
-  //   const ondeletePost = () => {
-  //     try {
-  //       setReqStatus("pending");
-  //       dispatch(deletePost({ id: postId })).unwrap();
-  //       setTitle("");
-  //       setUserId("");
-  //       setContent("");
-  //       navigate("/");
-  //     } catch (err) {
-  //       console.error("Failed to delete the post", err);
-  //     } finally {
-  //       setReqStatus("idle");
-  //     }
-  //   };
+  const ondeletePost = () => {
+    try {
+      setReqStatus("pending");
+      dispatch(deletePost({ id: postId })).unwrap();
+      setTitle("");
+      setUserId("");
+      setContent("");
+      navigate("/");
+    } catch (err) {
+      console.error("Failed to delete the post", err);
+    } finally {
+      setReqStatus("idle");
+    }
+  };
 
   return (
     <section>
@@ -114,9 +114,9 @@ const EditPost = () => {
         <button type="button" onClick={savePost} disabled={!canUpdate}>
           Save Post
         </button>
-        {/* <button className="deleteButton" type="button" onClick={ondeletePost}>
+        <button className="deleteButton" type="button" onClick={ondeletePost}>
           Delete Post
-        </button> */}
+        </button>
       </form>
     </section>
   );
