@@ -2,18 +2,25 @@ import {
   createSlice,
   createAsyncThunk,
   createSelector,
+  createEntityAdapter,
 } from "@reduxjs/toolkit";
 import { sub } from "date-fns";
 import axios from "axios";
 
 const POSTS_URL = "https://jsonplaceholder.typicode.com/posts";
 
-const initialState = {
-  posts: [],
+// define entity adapter
+const postsAdapter = createEntityAdapter({
+  sortComparer: (a, b) => b.date.localeCompare(a.date),
+});
+
+const initialState = postsAdapter.getInitialState({
+  // now the posts state is state.entities
+  // posts: [],
   status: "idle", //idle | loading | succedded | failed
   error: null,
   count: 0,
-};
+});
 
 //async thunk for getting posts
 export const fetchPosts = createAsyncThunk("posts/fetchPosts", async () => {
@@ -130,7 +137,11 @@ const postsSlice = createSlice({
   reducers: {
     reactionAdded(state, action) {
       const { postId, reaction } = action.payload;
-      const existingPost = state.posts.find((post) => post.id === postId);
+      // const existingPost = state.posts.find((post) => post.id === postId);
+      // after using entity adapter
+      // we can assume that all the posts are entities and we can lookup up each of them with help of id
+      const existingPost = state.entities[postId];
+
       if (existingPost) {
         existingPost.reactions[reaction] += 1;
       }
@@ -164,7 +175,9 @@ const postsSlice = createSlice({
           return post;
         });
         // update the state
-        state.posts = state.posts.concat(loadedPost);
+        // state.posts = state.posts.concat(loadedPost);
+        // after using entity adapter
+        postsAdapter.upsertMany(state, loadedPost);
       })
       .addCase(fetchPosts.rejected, (state, action) => {
         state.status = "failed";
@@ -172,14 +185,17 @@ const postsSlice = createSlice({
       })
       .addCase(addNewPost.fulfilled, (state, action) => {
         // after post is posted to api do following for updating state -
-        const sortedPosts = state.posts.sort((a, b) => {
-          if (a.id > b.id) return 1;
-          if (a.id < b.id) return -1;
-          return 0;
-        });
+        // const sortedPosts = state.posts.sort((a, b) => {
+        //   if (a.id > b.id) return 1;
+        //   if (a.id < b.id) return -1;
+        //   return 0;
+        // });
         //action.payload is the data returned after addNewPost thunk gets executed |
         // add new keys to payload
-        action.payload.id = sortedPosts[sortedPosts.length - 1].id + 1;
+        // action.payload.id = sortedPosts[sortedPosts.length - 1].id + 1;
+        // after using entity adapter
+
+        action.payload.id = state.ids.length + 1;
         action.payload.userId = Number(action.payload.userId);
         action.payload.date = new Date().toISOString();
         action.payload.reactions = {
@@ -189,7 +205,10 @@ const postsSlice = createSlice({
           rocket: 0,
           coffee: 0,
         };
-        state.posts.push(action.payload);
+        // state.posts.push(action.payload);
+
+        // after using entity adapter
+        postsAdapter.addOne(state, action.payload);
       })
       .addCase(updatePost.fulfilled, (state, action) => {
         if (!action.payload?.id) {
@@ -201,8 +220,10 @@ const postsSlice = createSlice({
         const { id } = action.payload;
         action.payload.date = new Date().toISOString();
         // update local state - remove the old post with that id and add updated post(action.payload)
-        const posts = state.posts.filter((post) => post.id !== id);
-        state.posts = [...posts, action.payload];
+        // const posts = state.posts.filter((post) => post.id !== id);
+        // state.posts = [...posts, action.payload];
+        // after using entity adapter
+        postsAdapter.upsertOne(state, action.payload);
       })
       .addCase(deletePost.fulfilled, (state, action) => {
         // if we don't get a id back
@@ -214,10 +235,12 @@ const postsSlice = createSlice({
         }
         const { id } = action.payload;
 
-        const posts = state.posts.filter((post) => post.id !== Number(id));
-        console.log(posts.length);
+        // const posts = state.posts.filter((post) => post.id !== Number(id));
+        // console.log(posts.length);
         // update local state with posts without deleted posts
-        state.posts = posts;
+        // state.posts = posts;
+        // after using entity adapter
+        postsAdapter.removeOne(state, id);
       });
   },
 });
@@ -225,14 +248,25 @@ const postsSlice = createSlice({
 // export a function that gets data from reducer
 // this function can be implemented in postsListComponent to get posts but we are doing it here cause if any time any change happen on the data we can implement that on this file instead of each and every component.
 // goes to store and gets posts state
-export const selectAllPosts = (state) => state.posts.posts;
+
+// export const selectAllPosts = (state) => state.posts.posts;
+// use entity adapter instead
+
 export const getPostsStatus = (state) => state.posts.status;
 export const getPostsError = (state) => state.posts.error;
 export const getCount = (state) => state.posts.count;
 
 //get a single post from state
-export const selectPostById = (state, postId) =>
-  state.posts.posts.find((post) => post.id === postId);
+// export const selectPostById = (state, postId) =>
+//   state.posts.posts.find((post) => post.id === postId);
+// use entity adapter instead
+
+export const {
+  selectAll: selectAllPosts,
+  selectById: selectPostById,
+  selectIds: selectPostIds,
+} = postsAdapter.getSelectors((state) => state.posts);
+// in createSlice method we have deined name of state as posts so we can do above expression
 
 //memoized eelector for better performance
 // returns posts by userId
