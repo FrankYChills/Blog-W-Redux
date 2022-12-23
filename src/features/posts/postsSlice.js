@@ -1,4 +1,8 @@
-import { createSlice, nanoid, createAsyncThunk } from "@reduxjs/toolkit";
+import {
+  createSlice,
+  createAsyncThunk,
+  createSelector,
+} from "@reduxjs/toolkit";
 import { sub } from "date-fns";
 import axios from "axios";
 
@@ -8,6 +12,7 @@ const initialState = {
   posts: [],
   status: "idle", //idle | loading | succedded | failed
   error: null,
+  count: 0,
 };
 
 //async thunk for getting posts
@@ -93,40 +98,45 @@ export const deletePost = createAsyncThunk(
 //   },
 // ];
 
+// lesson-2 : Add data to state
+// postAdded: {
+//   reducer(state, action) {
+//     state.posts.push(action.payload);
+//   }, //prepare do validation before updating the state using reducer function and returns data as payload to reducer
+//   prepare(title, content, userId) {
+//     return {
+//       payload: {
+//         id: nanoid(),
+//         title,
+//         content,
+//         date: new Date().toISOString(),
+//         userId,
+//         reactions: {
+//           thumbsUp: 0,
+//           wow: 0,
+//           heart: 0,
+//           rocket: 0,
+//           coffee: 0,
+//         },
+//       },
+//     };
+//   },
+// },
+
 const postsSlice = createSlice({
   // all the data below can be accessed through postSlice.reducer
   name: "posts",
   initialState,
   reducers: {
-    postAdded: {
-      reducer(state, action) {
-        state.posts.push(action.payload);
-      }, //prepare do validation before updating the state using reducer function and returns data as payload to reducer
-      prepare(title, content, userId) {
-        return {
-          payload: {
-            id: nanoid(),
-            title,
-            content,
-            date: new Date().toISOString(),
-            userId,
-            reactions: {
-              thumbsUp: 0,
-              wow: 0,
-              heart: 0,
-              rocket: 0,
-              coffee: 0,
-            },
-          },
-        };
-      },
-    },
     reactionAdded(state, action) {
       const { postId, reaction } = action.payload;
       const existingPost = state.posts.find((post) => post.id === postId);
       if (existingPost) {
         existingPost.reactions[reaction] += 1;
       }
+    },
+    increaseCount(state, action) {
+      state.count = state.count + 1;
     },
   },
   extraReducers(builder) {
@@ -218,13 +228,21 @@ const postsSlice = createSlice({
 export const selectAllPosts = (state) => state.posts.posts;
 export const getPostsStatus = (state) => state.posts.status;
 export const getPostsError = (state) => state.posts.error;
+export const getCount = (state) => state.posts.count;
 
 //get a single post from state
 export const selectPostById = (state, postId) =>
   state.posts.posts.find((post) => post.id === postId);
 
+//memoized eelector for better performance
+// returns posts by userId
+//this function will trigger again only when userId changes
+export const selectPostByUser = createSelector(
+  [selectAllPosts, (state, userId) => userId],
+  (posts, userId) => posts.filter((post) => post.userId === userId)
+);
 // return current state
 export default postsSlice.reducer;
 
 //export actions
-export const { postAdded, reactionAdded } = postsSlice.actions;
+export const { reactionAdded, increaseCount } = postsSlice.actions;
