@@ -3,13 +3,18 @@ import { useSelector, useDispatch } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
 
 import { selectAllUsers } from "../users/usersSlice";
-import { selectPostById, updatePost, deletePost } from "./postsSlice";
+import { selectPostById } from "./postsSlice";
+
+import { useUpdatePostMutation, useDeletePostMutation } from "./postsSlice";
 
 const EditPost = () => {
   // grab postId (/post/edit/:postId) from url
   const { postId } = useParams();
 
   const navigate = useNavigate();
+
+  const [updatePost, { isLoading }] = useUpdatePostMutation();
+  const [deletePost] = useDeletePostMutation();
 
   //   get post by id
   const post = useSelector((state) => selectPostById(state, Number(postId)));
@@ -20,9 +25,6 @@ const EditPost = () => {
   const [title, setTitle] = useState(post?.title);
   const [userId, setUserId] = useState(post?.userId);
   const [content, setContent] = useState(post?.body);
-  const [reqStatus, setReqStatus] = useState("idle");
-
-  const dispatch = useDispatch();
 
   if (!post) {
     return (
@@ -32,10 +34,7 @@ const EditPost = () => {
     );
   }
   const canUpdate =
-    Boolean(title) &&
-    Boolean(userId) &&
-    Boolean(content) &&
-    reqStatus === "idle";
+    Boolean(title) && Boolean(userId) && Boolean(content) && !isLoading;
 
   const usersOptions = users.map((user) => (
     <option id={user.id} value={user.id}>
@@ -43,43 +42,34 @@ const EditPost = () => {
     </option>
   ));
 
-  const savePost = () => {
+  const savePost = async () => {
     if (canUpdate) {
       try {
-        setReqStatus("pending");
-        dispatch(
-          updatePost({
-            id: post.id,
-            title: title,
-            body: content,
-            userId: userId,
-            reactions: post.reactions,
-          })
-        ).unwrap();
+        await updatePost({
+          id: post.id,
+          title,
+          body: content,
+          userId,
+        }).unwrap();
         setTitle("");
         setUserId("");
         setContent("");
         navigate(`/post/${postId}`);
       } catch (err) {
         console.error("Failed to update the post", err);
-      } finally {
-        setReqStatus("idle");
       }
     }
   };
 
-  const ondeletePost = () => {
+  const ondeletePost = async () => {
     try {
-      setReqStatus("pending");
-      dispatch(deletePost({ id: postId })).unwrap();
+      await deletePost({ id: post.id }).unwrap();
       setTitle("");
       setUserId("");
       setContent("");
       navigate("/");
     } catch (err) {
       console.error("Failed to delete the post", err);
-    } finally {
-      setReqStatus("idle");
     }
   };
 

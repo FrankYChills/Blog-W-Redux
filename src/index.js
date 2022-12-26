@@ -12,10 +12,10 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 //get users and posts immediately as app loads to fill the state
 import { fetchUsers } from "./features/users/usersSlice";
-import { fetchPosts } from "./features/posts/postsSlice";
+import { extendedApiSlice } from "./features/posts/postsSlice";
 // store can dispatch any function related to state of reducers(whose slice is defined in store)
+store.dispatch(extendedApiSlice.endpoints.getPosts.initiate());
 store.dispatch(fetchUsers());
-store.dispatch(fetchPosts());
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
